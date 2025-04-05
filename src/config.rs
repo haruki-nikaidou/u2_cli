@@ -26,9 +26,9 @@ impl U2CliConfig {
         if !config_file.exists() {
             let config = U2CliConfig::default();
             let config_str = toml::to_string(&config)?;
-            tokio::fs::write(config_file, config_str).await?;
+            tokio::fs::write(&config_file, config_str).await?;
         }
-        let config_str = tokio::fs::read_to_string(config_file).await?;
+        let config_str = tokio::fs::read_to_string(&config_file).await?;
         let config = toml::from_str(&config_str)?;
         Ok(config)
     }

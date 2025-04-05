@@ -31,6 +31,10 @@ enum Commands {
         /// The torrent ID to download
         #[arg(required = true)]
         torrent_id: i64,
+
+        /// Clean (delete) the torrent file after uploading to transmission
+        #[arg(short = 'c', long = "clean")]
+        clean: bool,
     },
 
     /// Clean all torrents from the save directory
@@ -45,8 +49,8 @@ async fn main() -> Result<()> {
         Commands::Config { cookie, save_dir } => {
             handle_config(cookie, save_dir).await?
         },
-        Commands::Download { torrent_id } => {
-            handle_download(*torrent_id).await?
+        Commands::Download { torrent_id, clean } => {
+            handle_download(*torrent_id, *clean).await?
         },
         Commands::Clean => {
             handle_clean().await?
@@ -88,7 +92,7 @@ async fn handle_config(cookie: &Option<String>, save_dir: &Option<String>) -> Re
     Ok(())
 }
 
-async fn handle_download(torrent_id: i64) -> Result<()> {
+async fn handle_download(torrent_id: i64, clean: bool) -> Result<()> {
     println!("Downloading torrent {}...", torrent_id);
 
     let torrent_path = torrent::download_torrent(torrent_id).await?;
@@ -97,6 +101,12 @@ async fn handle_download(torrent_id: i64) -> Result<()> {
     println!("Adding to transmission...");
     torrent::add_to_transmission(&torrent_path).await?;
     println!("Torrent added to transmission successfully");
+
+    if clean {
+        println!("Cleaning up torrent file...");
+        tokio::fs::remove_file(&torrent_path).await?;
+        println!("Torrent file deleted");
+    }
 
     Ok(())
 }
